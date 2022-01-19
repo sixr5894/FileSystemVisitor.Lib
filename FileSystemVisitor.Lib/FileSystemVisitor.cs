@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using static FileSystemVisitor.Lib.FileSystemVisitor;
 
 namespace FileSystemVisitor.Lib
 {
@@ -26,7 +27,7 @@ namespace FileSystemVisitor.Lib
         public FileSystemVisitor() : this(null, null, null) { }
         public FileSystemVisitor(DirectoryInfo entryPiont, Func<IEnumerable<FileSystemInfo>, IOrderedEnumerable<FileSystemInfo>> func, Notifier notifier = null)
         {
-
+            InvokeEvent(SearchStart, Events.SearchStart);
             this.sortingFunc = func;
             SubscribeDelegate(notifier);
             Initialize(entryPiont);
@@ -62,14 +63,14 @@ namespace FileSystemVisitor.Lib
             this._all = sortingFunc(this._all).ToList();
             _all.ForEach(c => {
                 if (c as DirectoryInfo != null)
-                    FilteredDirFinded(c);
+                    InvokeEvent(FilteredDirectoryFound, Events.FilteredDirectoryFound, c);
                 else
-                    FilteredFileFinded(c);
+                    InvokeEvent(FilteredFileFound, Events.FilteredFileFound, c);
             });
         }
         private void Initialize(DirectoryInfo entryPoint = null)
         {
-            SearchStarded();
+            InvokeEvent(SearchStart, Events.SearchStart);
             this._all = new List<FileSystemInfo>();
             if (entryPoint == null)
             {
@@ -78,7 +79,7 @@ namespace FileSystemVisitor.Lib
             }
             else
                 VisitDirRecursively(entryPoint);
-            SearchFinished();
+            InvokeEvent(SearchFinish, Events.SearchFinish);
         }
         private void VisitDirRecursively(DirectoryInfo dir)
         {
@@ -91,9 +92,9 @@ namespace FileSystemVisitor.Lib
                 }
                 catch { }
             this._all.Add(dir);
-            DirFinded(dir);
+            InvokeEvent(DirectoryFound, Events.DirectoryFound, dir);
             this._all.AddRange(dir.GetFiles());
-            dir.GetFiles().ToList().ForEach(c => FileFinded(c));
+            dir.GetFiles().ToList().ForEach(c => InvokeEvent(FileFound, Events.FileFound, c));
         }
         public IEnumerable<DirectoryInfo> GetAllFolders()
         {
@@ -105,41 +106,11 @@ namespace FileSystemVisitor.Lib
             foreach (var temp in _files)
                 yield return temp;
         }
-        private void SearchStarded()
+        private void InvokeEvent(Notifier notifier , Events ev, FileSystemInfo obj= null)
         {
-            if (SearchStart == null)
+            if (notifier == null)
                 return;
-            this.SearchStart.Invoke(this, new FileSystemVisitorEventArgs(Events.SearchStart));
-        }
-        private void SearchFinished()
-        {
-            if (SearchFinish == null)
-                return;
-            SearchFinish.Invoke(this, new FileSystemVisitorEventArgs(Events.SearchFinish));
-        }
-        private void FileFinded(FileSystemInfo obj)
-        {
-            if (FileFound == null)
-                return;
-            FileFound.Invoke(this, new FileSystemVisitorEventArgs(Events.FileFound, obj));
-        }
-        private void DirFinded(FileSystemInfo obj)
-        {
-            if (DirectoryFound == null)
-                return;
-            DirectoryFound.Invoke(this, new FileSystemVisitorEventArgs(Events.DirectoryFound, obj));
-        }
-        private void FilteredFileFinded(FileSystemInfo obj)
-        {
-            if (FilteredFileFound == null)
-                return;
-            FilteredFileFound.Invoke(this, new FileSystemVisitorEventArgs(Events.FilteredFileFound, obj));
-        }
-        private void FilteredDirFinded(FileSystemInfo obj)
-        {
-            if (FilteredDirectoryFound == null)
-                return;
-            FilteredDirectoryFound.Invoke(this, new FileSystemVisitorEventArgs(Events.FilteredDirectoryFound, obj));
+            notifier.Invoke(this, new FileSystemVisitorEventArgs(ev, obj));
         }
     }
 }
