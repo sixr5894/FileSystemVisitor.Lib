@@ -20,16 +20,16 @@ namespace FileSystemVisitor.Lib
         public event Notifier FilteredFileFound;
         public event Notifier FilteredDirectoryFound;
         private List<FileSystemInfo> _all;
-        private IEnumerable<DirectoryInfo> _folders { get => _all.Where(c => c as DirectoryInfo != null).Select(c => (DirectoryInfo)c); }
-        private IEnumerable<FileInfo> _files { get => _all.Where(c => c as FileInfo != null).Select(c => (FileInfo)c); }
+        private IEnumerable<DirectoryInfo> _folders { get => _all.OfType<DirectoryInfo>(); }
+        private IEnumerable<FileInfo> _files { get => _all.OfType<FileInfo>(); }
 
         Func<IEnumerable<FileSystemInfo>, IOrderedEnumerable<FileSystemInfo>> sortingFunc = null;
         public FileSystemVisitor() : this(null, null, null) { }
         public FileSystemVisitor(DirectoryInfo entryPiont, Func<IEnumerable<FileSystemInfo>, IOrderedEnumerable<FileSystemInfo>> func, Notifier notifier = null)
         {
-            InvokeEvent(SearchStart, Events.SearchStart);
             this.sortingFunc = func;
             SubscribeDelegate(notifier);
+            //InvokeEvent(SearchStart, Events.SearchStart);
             Initialize(entryPiont);
             ImplementSorting();
         }

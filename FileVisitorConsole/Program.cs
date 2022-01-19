@@ -14,7 +14,7 @@ namespace FileVisitorConsole
         static void Main(string[] args)
         {
             var temp = new FileSystemVisitor.Lib.FileSystemVisitor(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.Parent, c => c.OrderBy(t => t.CreationTime), Notify);
-
+            temp.GetAllFiles().ToList().ForEach(c => Console.WriteLine(c));
             Console.ReadLine();
 
         }
@@ -27,9 +27,9 @@ namespace FileVisitorConsole
         {
             switch (arg._event)
             {
-                case  Events.SearchStart :
+                case Events.SearchStart:
                     Console.WriteLine("SearchStart");
-                    Task.Run(() => InterruptLater(arg, sender ));
+                    //Task.Run(() => InterruptLater(arg, sender));
                     break;
                 case Events.SearchFinish:
                     Console.WriteLine("SearchFinish");
@@ -47,7 +47,7 @@ namespace FileVisitorConsole
                     Console.WriteLine("FilteredDirectoryFound");
                     break;
             }
-            
+
         }
     }
 }
